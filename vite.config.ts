@@ -10,10 +10,9 @@ export default defineConfig(({ mode }) => {
       host: '0.0.0.0',
     },
     plugins: [react()],
-    define: {
-      'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY),
-      'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY)
-    },
+    // NOTE: Do NOT add GEMINI_API_KEY here — it would be bundled into the client.
+    // The AI quiz feature must be proxied through a server-side endpoint in production.
+    define: {},
     resolve: {
       alias: {
         '@': path.resolve(__dirname, '.'),

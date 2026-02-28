@@ -52,10 +52,13 @@ const normalizeQuestion = (item: any, topic: SETopic, idx: number): Question | n
   };
 };
 
+// WARNING: VITE_GEMINI_API_KEY is a browser-visible env var. Only use it locally for
+// development. In production, proxy this call through a server-side edge function
+// so the key is never shipped to the client.
 export const generateAIQuiz = async (topic: SETopic, count = 5): Promise<Question[]> => {
   const apiKey = import.meta.env.VITE_GEMINI_API_KEY || '';
   if (!apiKey) {
-    throw new Error('Missing VITE_GEMINI_API_KEY. Add it to .env.local for AI quiz generation.');
+    throw new Error('Missing VITE_GEMINI_API_KEY. Add it to .env.local for local AI quiz generation only.');
   }
 
   const prompt = [

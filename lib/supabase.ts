@@ -3,9 +3,12 @@ import { createClient } from '@supabase/supabase-js';
 import { Quest, LibraryBook, Question, RaceData, ClassData, CosmeticItem, User, Npc, Spell, SkillNode } from '../types';
 import { QUESTS, LIBRARY_BOOKS, RACE_OPTIONS, CLASS_OPTIONS, COSMETIC_ITEMS, WORLD_NPCS, SPELLS, SKILL_TREE, INITIAL_USER } from '../constants';
 
-// Prefer environment config, keep fallback for local bootstrap.
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://qnurovjrxgproedytlyk.supabase.co';
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFudXJvdmpyeGdwcm9lZHl0bHlrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc4OTk0NzIsImV4cCI6MjA4MzQ3NTQ3Mn0.B9_iJ7XjbPANrM-6OgOFRmyzkwoTyv9Sj6I2V549ZX8';
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+if (!supabaseUrl || !supabaseAnonKey) {
+  throw new Error('Missing VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY. Add them to .env.local.');
+}
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
