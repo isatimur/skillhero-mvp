@@ -1,0 +1,14 @@
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 120'>
+  <defs>
+    <linearGradient id='gold' x1='0' y1='0' x2='1' y2='0'>
+      <stop offset='0%' stop-color='#9a6b1d'/>
+      <stop offset='50%' stop-color='#f1cd74'/>
+      <stop offset='100%' stop-color='#9a6b1d'/>
+    </linearGradient>
+  </defs>
+  <rect width='1200' height='120' fill='transparent'/>
+  <path d='M30 60 H1170' stroke='url(#gold)' stroke-width='2' opacity='0.8'/>
+  <path d='M120 60 l25 -18 l25 18 l-25 18 z' fill='none' stroke='url(#gold)' stroke-width='2' opacity='0.9'/>
+  <path d='M1080 60 l25 -18 l25 18 l-25 18 z' fill='none' stroke='url(#gold)' stroke-width='2' opacity='0.9'/>
+  <circle cx='600' cy='60' r='12' fill='none' stroke='url(#gold)' stroke-width='2' opacity='0.95'/>
+</svg>

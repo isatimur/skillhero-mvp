@@ -1,0 +1,288 @@
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SkillHero: The Code Chronicles</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚔️</text></svg>" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              obsidian: {
+                900: '#0a0a0c',
+                800: '#13131f',
+                700: '#1c1c2e',
+              },
+              gold: {
+                100: '#fbf7e3',
+                300: '#e5c15d',
+                400: '#daa520', // Main Gold
+                500: '#b8860b',
+                600: '#8a6508',
+                glow: 'rgba(218, 165, 32, 0.6)',
+              },
+              tech: {
+                cyan: '#00f0ff',
+                green: '#0aff00',
+                purple: '#bf00ff',
+              },
+              blood: {
+                500: '#8a0000',
+                900: '#380000',
+              }
+            },
+            fontFamily: {
+              fantasy: ['"Cinzel"', 'serif'],
+              sans: ['"Lato"', 'sans-serif'],
+              mono: ['"Fira Code"', 'monospace'],
+            },
+            backgroundImage: {
+              'hex-pattern': "url('https://www.transparenttextures.com/patterns/black-scales.png')",
+              'parchment': "url('https://www.transparenttextures.com/patterns/aged-paper.png')",
+              'stardust': "url('https://www.transparenttextures.com/patterns/stardust.png')",
+            },
+            animation: {
+              'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+              'float': 'float 6s ease-in-out infinite',
+              'shine': 'shine 2s infinite',
+              'glitch': 'glitch 1s linear infinite',
+              'pop-in': 'pop-in 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards',
+              'shake': 'shake 0.4s ease-in-out',
+              'flash-green': 'flash-green 0.5s ease-out',
+              'flash-red': 'flash-red 0.5s ease-out',
+              'ember-rise': 'ember-rise 4s ease-in infinite',
+              'rune-pulse': 'rune-pulse 2s ease-in-out infinite',
+              'fog-drift': 'fog-drift 30s linear infinite',
+              'boss-hp-low': 'boss-hp-low 1s ease-in-out infinite',
+              'float-up': 'float-up 1.2s ease-out forwards',
+              'fade-in-out': 'fade-in-out 1.5s ease-in-out forwards',
+            },
+            keyframes: {
+              float: {
+                '0%, 100%': { transform: 'translateY(0)' },
+                '50%': { transform: 'translateY(-10px)' },
+              },
+              shine: {
+                '0%': { transform: 'translateX(-100%)' },
+                '100%': { transform: 'translateX(100%)' },
+              },
+              glitch: {
+                '2%, 64%': { transform: 'translate(2px,0) skew(0deg)' },
+                '4%, 60%': { transform: 'translate(-2px,0) skew(0deg)' },
+                '62%': { transform: 'translate(0,0) skew(5deg)' },
+              },
+              'pop-in': {
+                '0%': { opacity: '0', transform: 'scale(0.9) translateY(10px)' },
+                '100%': { opacity: '1', transform: 'scale(1) translateY(0)' },
+              },
+              shake: {
+                '0%, 100%': { transform: 'translateX(0)' },
+                '20%':      { transform: 'translateX(-8px)' },
+                '40%':      { transform: 'translateX(8px)' },
+                '60%':      { transform: 'translateX(-5px)' },
+                '80%':      { transform: 'translateX(5px)' },
+              },
+              'flash-green': {
+                '0%, 100%': { backgroundColor: 'transparent' },
+                '30%':      { backgroundColor: 'rgba(34,197,94,0.25)' },
+              },
+              'flash-red': {
+                '0%, 100%': { backgroundColor: 'transparent' },
+                '30%':      { backgroundColor: 'rgba(239,68,68,0.25)' },
+              },
+              'ember-rise': {
+                '0%': { transform: 'translateY(0) scale(1)', opacity: '1' },
+                '100%': { transform: 'translateY(-120px) scale(0)', opacity: '0' }
+              },
+              'rune-pulse': {
+                '0%, 100%': { boxShadow: '0 0 5px rgba(218,165,32,0.3), inset 0 0 5px rgba(218,165,32,0.1)' },
+                '50%': { boxShadow: '0 0 15px rgba(218,165,32,0.5), inset 0 0 10px rgba(218,165,32,0.2)' }
+              },
+              'fog-drift': {
+                '0%': { transform: 'translateX(-25%)' },
+                '100%': { transform: 'translateX(25%)' }
+              },
+              'boss-hp-low': {
+                '0%, 100%': { boxShadow: '0 0 10px rgba(220,38,38,0.3)' },
+                '50%': { boxShadow: '0 0 25px rgba(220,38,38,0.7)' }
+              },
+              'float-up': {
+                '0%':   { opacity: '1', transform: 'translateX(-50%) translateY(0)' },
+                '100%': { opacity: '0', transform: 'translateX(-50%) translateY(-60px)' },
+              },
+              'fade-in-out': {
+                '0%':   { opacity: '0' },
+                '20%':  { opacity: '1' },
+                '80%':  { opacity: '1' },
+                '100%': { opacity: '0' },
+              },
+            }
+          },
+        },
+      };
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Fira+Code:wght@300;400;700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
+    <style>
+      body {
+        background-color: #070b14;
+        color: #e2e8f0;
+      }
+      .perspective-1000 { perspective: 1000px; }
+      .preserve-3d { transform-style: preserve-3d; }
+      .backface-hidden { backface-visibility: hidden; }
+      
+      /* Custom Scrollbar for "Tech" feel */
+      ::-webkit-scrollbar { width: 8px; height: 8px; }
+      ::-webkit-scrollbar-track { background: #0f172a; border-left: 1px solid #1e293b; }
+      ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; border: 1px solid #475569; }
+      ::-webkit-scrollbar-thumb:hover { background: #daa520; }
+
+      .text-shadow-gold { text-shadow: 0 0 10px rgba(218, 165, 32, 0.5); }
+      .text-shadow-red { text-shadow: 0 0 10px rgba(220, 38, 38, 0.8); }
+      .text-shadow-tech { text-shadow: 0 0 5px rgba(0, 240, 255, 0.8); }
+
+      /* Fantasy RPG Visual System */
+      .ornament-corners { position: relative; }
+      .ornament-corners::before,
+      .ornament-corners::after {
+        content: '';
+        position: absolute;
+        width: 16px;
+        height: 16px;
+        border-color: rgba(218, 165, 32, 0.5);
+        pointer-events: none;
+        z-index: 20;
+      }
+      .ornament-corners::before { top: 4px; left: 4px; border-top: 2px solid; border-left: 2px solid; }
+      .ornament-corners::after { top: 4px; right: 4px; border-top: 2px solid; border-right: 2px solid; }
+
+      .vignette {
+        box-shadow: inset 0 0 120px 40px rgba(0,0,0,0.7);
+        pointer-events: none;
+      }
+
+      .scroll-bg {
+        background: linear-gradient(135deg, rgba(26,28,44,0.95) 0%, rgba(10,10,12,0.98) 50%, rgba(26,28,44,0.95) 100%);
+      }
+
+      .fantasy-world-bg {
+        background:
+          radial-gradient(1200px 700px at 20% -10%, rgba(29, 78, 216, 0.2), transparent 55%),
+          radial-gradient(1000px 600px at 85% 10%, rgba(14, 116, 144, 0.18), transparent 60%),
+          radial-gradient(1200px 700px at 50% 115%, rgba(113, 63, 18, 0.2), transparent 62%),
+          linear-gradient(180deg, #0b1020 0%, #111a2a 45%, #0b0d18 100%);
+      }
+
+      .fantasy-aurora {
+        background:
+          radial-gradient(60% 60% at 15% 20%, rgba(56, 189, 248, 0.16), transparent 72%),
+          radial-gradient(55% 55% at 85% 15%, rgba(59, 130, 246, 0.14), transparent 70%),
+          radial-gradient(50% 50% at 50% 90%, rgba(251, 191, 36, 0.12), transparent 72%);
+        mix-blend-mode: screen;
+        opacity: 0.85;
+        animation: aurora-drift 22s ease-in-out infinite alternate;
+      }
+
+      .fantasy-celestial {
+        background:
+          radial-gradient(circle at 15% 30%, rgba(196, 181, 253, 0.12) 0%, transparent 28%),
+          radial-gradient(circle at 85% 20%, rgba(165, 243, 252, 0.12) 0%, transparent 30%),
+          radial-gradient(circle at 60% 70%, rgba(251, 191, 36, 0.1) 0%, transparent 34%);
+        filter: blur(1px);
+        opacity: 0.85;
+      }
+
+      .fantasy-mist {
+        background:
+          radial-gradient(700px 260px at -10% 85%, rgba(148, 163, 184, 0.14), transparent 70%),
+          radial-gradient(760px 280px at 110% 82%, rgba(125, 211, 252, 0.1), transparent 72%);
+        animation: mist-shift 18s ease-in-out infinite alternate;
+      }
+
+      .fantasy-runes {
+        background-image:
+          radial-gradient(circle at 10% 20%, rgba(251, 191, 36, 0.15) 0 1px, transparent 2px),
+          radial-gradient(circle at 80% 35%, rgba(56, 189, 248, 0.12) 0 1px, transparent 2px),
+          radial-gradient(circle at 40% 70%, rgba(251, 191, 36, 0.12) 0 1px, transparent 2px);
+        background-size: 240px 240px, 280px 280px, 260px 260px;
+        background-position: 0 0, 120px 60px, 40px 180px;
+        opacity: 0.35;
+        animation: rune-drift 26s linear infinite;
+      }
+
+      .text-embossed-gold {
+        color: #daa520;
+        text-shadow: 0 1px 0 rgba(255,215,0,0.4), 0 -1px 0 rgba(0,0,0,0.6), 0 0 15px rgba(218,165,32,0.5), 0 0 30px rgba(218,165,32,0.2);
+      }
+
+      .fantasy-divider {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        opacity: 0.4;
+      }
+      .fantasy-divider::before, .fantasy-divider::after {
+        content: '';
+        flex: 1;
+        height: 1px;
+        background: linear-gradient(90deg, transparent, rgba(218,165,32,0.6), transparent);
+      }
+      .fantasy-divider::before { background: linear-gradient(90deg, transparent, rgba(218,165,32,0.6)); }
+      .fantasy-divider::after { background: linear-gradient(90deg, rgba(218,165,32,0.6), transparent); }
+
+      .card-glow-gold:hover { box-shadow: 0 0 25px rgba(218,165,32,0.15), inset 0 0 25px rgba(218,165,32,0.05); }
+      .card-glow-red:hover { box-shadow: 0 0 25px rgba(239,68,68,0.15), inset 0 0 25px rgba(239,68,68,0.05); }
+      .card-glow-emerald:hover { box-shadow: 0 0 25px rgba(16,185,129,0.15), inset 0 0 25px rgba(16,185,129,0.05); }
+      .card-glow-blue:hover { box-shadow: 0 0 25px rgba(59,130,246,0.15), inset 0 0 25px rgba(59,130,246,0.05); }
+      .card-glow-purple:hover { box-shadow: 0 0 25px rgba(168,85,247,0.15), inset 0 0 25px rgba(168,85,247,0.05); }
+      .card-glow-cyan:hover { box-shadow: 0 0 25px rgba(34,211,238,0.15), inset 0 0 25px rgba(34,211,238,0.05); }
+      .card-glow-amber:hover { box-shadow: 0 0 25px rgba(245,158,11,0.15), inset 0 0 25px rgba(245,158,11,0.05); }
+      .card-glow-pink:hover { box-shadow: 0 0 25px rgba(236,72,153,0.15), inset 0 0 25px rgba(236,72,153,0.05); }
+      .card-glow-green:hover { box-shadow: 0 0 25px rgba(74,222,128,0.15), inset 0 0 25px rgba(74,222,128,0.05); }
+      .card-glow-indigo:hover { box-shadow: 0 0 25px rgba(99,102,241,0.15), inset 0 0 25px rgba(99,102,241,0.05); }
+
+      @keyframes mist-shift {
+        0% { transform: translateX(-2%) translateY(1%); opacity: 0.45; }
+        100% { transform: translateX(2%) translateY(-1%); opacity: 0.7; }
+      }
+
+      @keyframes rune-drift {
+        0% { background-position: 0 0, 120px 60px, 40px 180px; }
+        100% { background-position: 180px 90px, 260px 20px, 200px 260px; }
+      }
+
+      @keyframes aurora-drift {
+        0% { transform: translate3d(-2%, -1%, 0) scale(1); filter: hue-rotate(0deg); }
+        100% { transform: translate3d(2%, 1%, 0) scale(1.04); filter: hue-rotate(22deg); }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .animate-shake { animation: none !important; }
+        .animate-flash-green, .animate-flash-red { animation: none !important; }
+        .animate-fade-in-out { animation: none !important; }
+        .animate-float-up { animation: none !important; }
+      }
+    </style>
+    <script type="importmap">
+{
+  "imports": {
+    "lucide-react": "https://esm.sh/lucide-react@0.263.1",
+    "react": "https://esm.sh/react@18.2.0",
+    "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
+    "react-dom": "https://esm.sh/react-dom@18.2.0",
+    "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@2.39.3",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "react/": "https://esm.sh/react@^19.2.3/"
+  }
+}
+</script>
+</head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
+</body>
+</html>

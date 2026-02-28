@@ -1,0 +1,259 @@
+
+-- ==============================================================================
+-- SkillHero Complete Database Schema & Seed Data
+-- Run this in Supabase SQL Editor to initialize or update your database.
+-- ==============================================================================
+
+-- 0. FIXES & MIGRATIONS
+-- Ensure quests table has the next_quest_ids column if it was created previously without it
+CREATE TABLE IF NOT EXISTS public.quests (
+    id TEXT PRIMARY KEY,
+    title TEXT NOT NULL,
+    description TEXT NOT NULL,
+    level_required INTEGER NOT NULL,
+    narrative_intro TEXT[] NOT NULL,
+    narrative_outro TEXT NOT NULL,
+    reward_xp INTEGER NOT NULL,
+    enemy_name TEXT NOT NULL,
+    enemy_image TEXT,
+    enemy_max_hp INTEGER,
+    enemy_attack_damage INTEGER,
+    next_quest_ids TEXT[]
+);
+
+-- Fix for existing tables missing the column
+DO $$ 
+BEGIN 
+    IF EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'quests') THEN
+        ALTER TABLE public.quests ADD COLUMN IF NOT EXISTS next_quest_ids TEXT[];
+    END IF;
+END $$;
+
+-- 1. COSMETIC ITEMS
+CREATE TABLE IF NOT EXISTS public.cosmetic_items (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    type TEXT NOT NULL,
+    level_required INTEGER NOT NULL,
+    icon_id TEXT NOT NULL,
+    style_class TEXT NOT NULL,
+    rarity TEXT DEFAULT 'common',
+    img_url TEXT
+);
+
+ALTER TABLE public.cosmetic_items ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Public read cosmetic_items" ON public.cosmetic_items;
+CREATE POLICY "Public read cosmetic_items" ON public.cosmetic_items FOR SELECT USING (true);
+
+INSERT INTO public.cosmetic_items (id, name, type, level_required, icon_id, style_class, rarity) VALUES
+('head_novice', 'Novice Hood', 'HEAD', 1, 'User', 'border-slate-500', 'common'),
+('head_debugger', 'Debugger Lens', 'HEAD', 2, 'Search', 'border-blue-400', 'common'),
+('head_headphones', 'Noise Cancellers', 'HEAD', 4, 'Headphones', 'border-indigo-400', 'rare'),
+('head_brain', 'Thinking Cap', 'HEAD', 3, 'Brain', 'border-pink-400', 'rare'),
+('head_visor', 'Code Visor', 'HEAD', 5, 'Eye', 'border-red-500', 'rare'),
+('head_glasses', 'Blue Light Specs', 'HEAD', 6, 'Glasses', 'border-cyan-400', 'rare'),
+('head_crown', 'Arch-Mage Crown', 'HEAD', 10, 'Crown', 'border-gold-500', 'legendary'),
+('item_phantom_goggles', 'Phantom Goggles', 'HEAD', 12, 'Glasses', 'border-purple-500 bg-purple-900/50', 'rare'),
+('item_snapshot_lens', 'Snapshot Lens', 'HEAD', 12, 'Search', 'border-blue-400 bg-blue-900/50', 'rare'),
+('head_rubberduck', 'Rubber Duck Hat', 'HEAD', 5, 'Coffee', 'border-yellow-400 bg-yellow-900', 'epic'),
+('head_propeller', 'Propeller Beanie', 'HEAD', 2, 'Zap', 'border-green-400 bg-blue-900', 'common'),
+('body_novice', 'Novice Robes', 'BODY', 1, 'Shirt', 'bg-blue-900 border-blue-400', 'common'),
+('body_red', 'Bug Hunter Garb', 'BODY', 2, 'Shirt', 'bg-red-900 border-red-400', 'common'),
+('body_hoodie', 'Startup Hoodie', 'BODY', 3, 'Shirt', 'bg-gray-700 border-gray-500', 'common'),
+('body_green', 'Refactor Tunic', 'BODY', 4, 'Shirt', 'bg-green-900 border-green-400', 'rare'),
+('body_midnight', 'Midnight Cloak', 'BODY', 5, 'Shirt', 'bg-indigo-950 border-indigo-500', 'rare'),
+('body_404', '404 T-Shirt', 'BODY', 6, 'AlertCircle', 'bg-white border-black text-black', 'epic'),
+('body_firewall', 'Firewall Plate', 'BODY', 7, 'Flame', 'bg-orange-900 border-orange-500', 'epic'),
+('body_gold', 'Legendary Armor', 'BODY', 8, 'Shirt', 'bg-yellow-900 border-gold-500', 'legendary'),
+('body_matrix', 'The Source Code', 'BODY', 9, 'Cpu', 'bg-black border-green-500', 'legendary'),
+('item_consistency_amulet', 'Consistency Amulet', 'BODY', 15, 'Database', 'bg-emerald-900 border-emerald-400', 'legendary'),
+('weapon_scroll', 'Syntax Scroll', 'WEAPON', 1, 'Scroll', '', 'common'),
+('weapon_sword', 'Logic Sword', 'WEAPON', 2, 'Sword', '', 'common'),
+('weapon_shield', 'Testing Shield', 'WEAPON', 3, 'Shield', '', 'common'),
+('weapon_keyboard', 'Mech Keyboard', 'WEAPON', 4, 'Keyboard', '', 'rare'),
+('weapon_hammer', 'Ban Hammer', 'WEAPON', 5, 'Hammer', '', 'rare'),
+('weapon_terminal', 'Root Terminal', 'WEAPON', 6, 'Terminal', '', 'epic'),
+('weapon_rgb_shield', 'RGB Gamer Shield', 'WEAPON', 7, 'Shield', 'text-pink-500', 'epic'),
+('weapon_coffee', 'Infinite Coffee', 'WEAPON', 8, 'Coffee', '', 'legendary'),
+('item_cap_shield', 'CAP Shield', 'WEAPON', 13, 'Shield', 'text-indigo-400', 'epic'),
+('item_lock_order_scroll', 'Scroll of Deadlocks', 'WEAPON', 12, 'Scroll', 'text-red-800', 'rare'),
+('weapon_git_branch', 'Branching Blade', 'WEAPON', 99, 'Code', 'text-purple-400', 'legendary'),
+('weapon_react_reactor', 'React Reactor', 'WEAPON', 99, 'Cpu', 'text-cyan-400', 'legendary'),
+('weapon_python_staff', 'Serpent Staff (Water)', 'WEAPON', 99, 'Terminal', 'text-blue-500', 'legendary'),
+('weapon_cpp_flame', 'C++ Inferno (Fire)', 'WEAPON', 99, 'Flame', 'text-red-600', 'legendary'),
+('weapon_rust_shield', 'Oxidized Guard (Earth)', 'WEAPON', 99, 'Shield', 'text-orange-700', 'legendary')
+ON CONFLICT (id) DO NOTHING;
+
+-- 2. HERO RACES
+CREATE TABLE IF NOT EXISTS public.hero_races (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    icon_id TEXT NOT NULL,
+    description TEXT NOT NULL,
+    stats JSONB NOT NULL,
+    sprite_pos TEXT,
+    passive_name TEXT,
+    passive_desc TEXT,
+    img_url TEXT
+);
+
+ALTER TABLE public.hero_races ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Public read hero_races" ON public.hero_races;
+CREATE POLICY "Public read hero_races" ON public.hero_races FOR SELECT USING (true);
+
+INSERT INTO public.hero_races (id, name, icon_id, description, stats, sprite_pos, passive_name, passive_desc, img_url) VALUES
+('HUMAN', 'Human', 'User', 'Versatile and ambitious.', '{"str": 1, "int": 1, "agi": 1}', '0% 0%', 'Resourceful', '15% chance to restore 10 HP on a correct answer.', NULL),
+('ELF', 'Elf', 'Eye', 'Ancient and wise.', '{"str": 0, "int": 2, "agi": 1}', '50% 0%', 'Elven Accuracy', 'Significantly increased Critical Hit chance.', NULL),
+('DWARF', 'Dwarf', 'Hammer', 'Stout and skilled.', '{"str": 2, "int": 1, "agi": 0}', '100% 0%', 'Iron Skin', 'Reduces all incoming damage by 20%.', NULL),
+('ORC', 'Orc', 'Shield', 'Fierce and strong.', '{"str": 3, "int": 0, "agi": 0}', '0% 50%', 'Blood Rage', 'Deal up to 50% more damage as your Health gets lower.', NULL),
+('HALFLING', 'Halfling', 'Coffee', 'Lucky and nimble.', '{"str": 0, "int": 1, "agi": 2}', '50% 50%', 'Lucky Dodge', '20% chance to completely avoid damage from incorrect answers.', NULL),
+('DRAGONKIN', 'Dragonkin', 'Flame', 'Born of fire.', '{"str": 2, "int": 1, "agi": 0}', '100% 50%', 'Inner Fire', 'Attacks deal additional bonus damage.', NULL),
+('FAIRY', 'Fairy', 'Zap', 'Magical and quick.', '{"str": 0, "int": 2, "agi": 2}', '0% 100%', 'Pixie Dust', 'Heal a small amount of HP every turn you maintain a streak.', './fairy.png'),
+('DEMON', 'Demon', 'Ghost', 'Power at a cost.', '{"str": 2, "int": 0, "agi": 2}', '50% 100%', 'Soul Siphon', 'Critical hits heal you for the damage dealt.', 'https://chatgpt.com/backend-api/estuary/public_content/enc/eyJpZCI6Im1fNjk1YjBjMDA5ZmU4ODE5MWFhOWYxMjkwYzVkNDk1MDA6ZmlsZV8wMDAwMDAwMDk3MmM3MWY0OTJkMGM4NjdlYzVmOTJmYyIsInRzIjoiMjA0NTgiLCJwIjoicHlpIiwiY2lkIjoiMSIsInNpZyI6IjVhOWRmYjQxNmMyYmQ0YWU0ZWNjOTY0NzdhODhmYzhiZjVlZjUyZjNmZjZhOWM5MDYzYTRkNjBhNTc3ZTA3OGEiLCJ2IjoiMCIsImdpem1vX2lkIjpudWxsLCJjcyI6bnVsbCwiY3AiOm51bGwsIm1hIjpudWxsfQ=='),
+('UNDEAD', 'Undead', 'Skull', 'Eternal coding.', '{"str": 1, "int": 3, "agi": 0}', '100% 100%', 'Grim Resolve', 'Survive a fatal blow with 1 HP once per battle.', NULL),
+('CONSTRUCT', 'Construct', 'Cpu', 'Built, not born.', '{"str": 2, "int": 2, "agi": 0}', '0% 0%', 'Compiled', 'Immune to fatigue.', 'https://chatgpt.com/backend-api/estuary/public_content/enc/eyJpZCI6Im1fNjk1YjBkNTQwZTYwNDE5MWE1MjNjNDkzMTI2MmVhYTY6ZmlsZV8wMDAwMDAwMDM4YTQ3MWY0MTdhNDIyNzY3ZDE4OGEwYyIsInRzIjoiMjA0NTgiLCJwIjoicHlpIiwiY2lkIjoiMSIsInNpZyI6ImMyY2JmOTU4NzM2YjZkNzBiNmRjZTVhZWY1ZTUxZWRjZWMzYTAzNGY1NzkwMDliZmM1ZTU0NTZhMDVhMTc2YTYiLCJ2IjoiMCIsImdpem1vX2lkIjpudWxsLCJjcyI6bnVsbCwiY3AiOm51bGwsIm1hIjpudWxsfQ=='),
+('GOBLIN', 'Goblin', 'Bug', 'Chaos incarnate.', '{"str": 1, "int": 1, "agi": 3}', '50% 50%', 'Spaghetti Code', '50% chance to confuse enemies on hit.', NULL)
+ON CONFLICT (id) DO NOTHING;
+
+-- 3. HERO CLASSES
+CREATE TABLE IF NOT EXISTS public.hero_classes (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    icon_id TEXT NOT NULL,
+    description TEXT NOT NULL,
+    stats JSONB NOT NULL,
+    body_id TEXT NOT NULL,
+    weapon_id TEXT NOT NULL
+);
+
+ALTER TABLE public.hero_classes ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Public read hero_classes" ON public.hero_classes;
+CREATE POLICY "Public read hero_classes" ON public.hero_classes FOR SELECT USING (true);
+
+INSERT INTO public.hero_classes (id, name, icon_id, description, stats, body_id, weapon_id) VALUES
+('WARRIOR', 'Warrior', 'Sword', 'Strength and valor.', '{"str": 4, "int": 1, "agi": 2}', 'body_red', 'weapon_sword'),
+('MAGE', 'Mage', 'Zap', 'Arcane mastery.', '{"str": 1, "int": 4, "agi": 2}', 'body_novice', 'weapon_wand'),
+('ROGUE', 'Rogue', 'Ghost', 'Swift and unseen.', '{"str": 2, "int": 2, "agi": 4}', 'body_hoodie', 'weapon_ghost'),
+('PALADIN', 'Paladin', 'Shield', 'Holy warrior of clean code.', '{"str": 3, "int": 2, "agi": 0}', 'body_gold', 'weapon_hammer'),
+('BARD', 'Bard', 'Music', 'Weaves code into song.', '{"str": 1, "int": 3, "agi": 3}', 'body_green', 'weapon_scroll')
+ON CONFLICT (id) DO NOTHING;
+
+-- 4. QUESTS & QUESTIONS
+CREATE TABLE IF NOT EXISTS public.library_books (
+    id TEXT PRIMARY KEY,
+    title TEXT NOT NULL,
+    author TEXT NOT NULL,
+    description TEXT NOT NULL,
+    content JSONB NOT NULL,
+    reward_xp INTEGER NOT NULL,
+    reward_item_id TEXT
+);
+
+CREATE TABLE IF NOT EXISTS public.questions (
+    id TEXT PRIMARY KEY,
+    quest_id TEXT REFERENCES public.quests(id),
+    book_id TEXT REFERENCES public.library_books(id),
+    text TEXT NOT NULL,
+    options JSONB NOT NULL,
+    correct_index INTEGER NOT NULL,
+    explanation TEXT NOT NULL,
+    difficulty TEXT NOT NULL,
+    xp_reward INTEGER NOT NULL
+);
+
+ALTER TABLE public.quests ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.library_books ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.questions ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Public read quests" ON public.quests;
+DROP POLICY IF EXISTS "Public read library_books" ON public.library_books;
+DROP POLICY IF EXISTS "Public read questions" ON public.questions;
+
+CREATE POLICY "Public read quests" ON public.quests FOR SELECT USING (true);
+CREATE POLICY "Public read library_books" ON public.library_books FOR SELECT USING (true);
+CREATE POLICY "Public read questions" ON public.questions FOR SELECT USING (true);
+
+-- Insert Quests
+INSERT INTO public.quests (id, title, description, level_required, narrative_intro, narrative_outro, reward_xp, enemy_name, enemy_image, enemy_max_hp, enemy_attack_damage, next_quest_ids) VALUES
+('q1', 'The Bugbear of Legacy Code', 'A village is plagued by mysterious errors. Investigate the cause! (Perfect Score unlocks Elite Path)', 1, ARRAY['You arrive at the village of Monolith.', 'The system crashes every night!', 'It is the Bugbear of Legacy Code!'], 'The Bugbear dissolves into refactored functions.', 300, 'Legacy Bugbear', '👹', 80, 15, ARRAY['q2a', 'q2b']),
+('q2a', 'The Refactor Ranger', 'Standard Path: Aid the local guild in cleaning up technical debt.', 2, ARRAY['The Debt Collector demands repayment!', 'Code quality has dropped below acceptable levels.', 'Fight for clean code!'], 'The debt is paid. The codebase shines.', 400, 'Debt Collector', '🧟‍♂️', 100, 18, NULL),
+('q2b', 'The Zero-Day Slayer', 'Elite Path: Hunt down a critical vulnerability before it exploits the kingdom.', 2, ARRAY['A shadow moves in the server logs.', 'Root access has been compromised.', 'Eliminate the threat!'], 'Vulnerability patched. The kingdom is secure.', 600, 'Exploit Shade', '🥷', 150, 25, NULL),
+('q2', 'The Infinite Loop Hydra', 'A beast that consumes all CPU cycles. Break the condition!', 2, ARRAY['The CPU fans are screaming.', 'A Hydra spins in circles, eating memory.', 'Break the loop to slay it!'], 'The process terminates successfully. Silence falls.', 450, 'Loop Hydra', '🐍', 120, 20, NULL),
+('q3', 'The Phantom of the Null', 'A spectral entity that crashes programs when accessed.', 3, ARRAY['The console is filled with red text.', '''Object reference not set to an instance of an object''.', 'The Wraith approaches!'], 'The reference is handled. The program stabilizes.', 600, 'Null Pointer Wraith', '👻', 150, 25, NULL),
+('q_recursion', 'The Recursion Rat', 'A giant rat that multiplies every time you hit it. Find the base case!', 3, ARRAY['Squeak! Squeak! Squeak!', 'For every rat you see, two more appear.', 'Stop the call stack overflow!'], 'The stack unwinds. Only one rat remains... and it flees.', 550, 'Recursion Rat', '🐀', 180, 30, NULL),
+('q_404', 'The 404 Ghoul', 'A ghoul that hides in broken links. It cannot be found!', 4, ARRAY['You try to attack... but the target is not found.', 'The Ghoul laughs from a broken URL.', 'Fix the path to strike!'], '200 OK. The Ghoul is deleted.', 800, 'Ghoul 404', '🧟', 220, 35, NULL),
+('q4', 'The Spaghetti Code Golem', 'A tangled mess of goto statements and global variables.', 5, ARRAY['You enter the Forbidden Repo.', 'Lines of code twist and turn without logic.', 'The Golem rises from the tech debt!'], 'The code is refactored into clean modules.', 1000, 'Spaghetti Golem', '🍝', 250, 35, NULL),
+('q5', 'The Distributed Denial Dragon', 'A three-headed dragon overwhelming the server with requests.', 7, ARRAY['The Load Balancer is on fire.', 'Traffic spikes by 10,000%.', 'The Dragon descends from the cloud!'], 'Traffic normalized. The cache holds strong.', 1500, 'DDoS Dragon', '🐉', 400, 50, NULL)
+ON CONFLICT (id) DO NOTHING;
+
+-- Insert Library Books
+INSERT INTO public.library_books (id, title, author, description, content, reward_xp, reward_item_id) VALUES
+('book_git', 'The Grimoire of Git', 'Archmage Torvalds', 'Learn the ancient art of Version Control and Branching.', '["In the beginning, there was chaos. Code was lost, overwritten, and broken. Projects crumbled under their own weight.", "Then came Git, the distributed version control system forged in the fires of Linux. It tracks changes in source code during software development.", "Key Concepts of the Craft:\n- **Repository (The Vault)**: A storage location for your project.\n- **Commit (The Save Point)**: A snapshot of your repository at a specific point in time.\n- **Branch (The Alternate Timeline)**: A parallel version of a repository.", "Remember: Commit often, write clear messages, and never force push to main unless you want to summon a demon of discord."]', 500, 'weapon_git_branch'),
+('book_react', 'The Reactive Arcana', 'The Facebook Guild', 'Master the component lifecycle and the power of Hooks.', '["The Reactive Arcana is a library for building user interfaces based on components. It teaches that the UI is but a reflection of the State.", "A **Component** is a reusable spell of UI. It accepts inputs called ''props'' and returns elements describing what should appear.", "**State** is the soul of the component—data that changes over time. When state changes, the component re-renders.", "**Hooks** let you use state and other React features without the clunky incantations of Classes. `useState` summons memory, and `useEffect` binds your component to the outside world."]', 600, 'weapon_react_reactor'),
+('book_cicd', 'The Pipeline of Prometheus', 'Jenkins the Construct', 'Automate the forge. Build, Test, and Deploy without hands.', '["In the age of manual deployments, wizards toiled for hours to release a single spell. Then, Prometheus brought the fire of Automation.", "**CI (Continuous Integration)**: The practice of merging all developers'' working copies to a shared mainline several times a day.", "**CD (Continuous Delivery/Deployment)**: The ability to get changes of all types into production safely and quickly.", "**The Pipeline**: A series of automated steps—Linting, Building, Testing, and Deploying. If one step fails, the pipeline halts."]', 700, NULL),
+('book_datastruct', 'The Codex of Structures', 'Ada the Architect', 'How to store your mana efficiently. Arrays, Lists, and Maps.', '["Data is the mana of the digital world. How you store it determines how fast you can cast.", "**Arrays**: Blocks of contiguous memory. Fast to access by index (O(1)), but costly to resize.", "**Linked Lists**: Chains of nodes. Easy to insert/delete (O(1)), but slow to find a specific element (O(n)).", "**Hash Maps**: The vault of key-value pairs. Near instant access (O(1)) by key.", "**Trees**: Hierarchical structures. Great for searching and sorting data."]', 750, NULL),
+('book_python', 'The Serpent''s Syntax', 'Guido the Wise', 'A guide to the readable and powerful language of Python (Water Spell).', '["Python is an interpreted, high-level language.", "It emphasizes readability.", "Key Data Structures: List, Tuple, Dictionary.", "It supports multiple paradigms."]', 550, 'weapon_python_staff'),
+('book_algo', 'Algorithms of the Ancients', 'Al-Khwarizmi', 'Sorting, Searching, and the art of problem solving.', '["An algorithm is a step-by-step procedure for calculations.", "**Sorting**: Organizing data. QuickSort and MergeSort are efficient (O(n log n)). BubbleSort is slow (O(n^2)).", "**Binary Search**: Finding an item in a sorted list by repeatedly dividing the search interval in half. Very fast (O(log n))."]', 800, NULL),
+('book_async', 'The Chronomancer''s Guide to Async', 'Temporal Sage', 'Master time itself using Promises and the Event Loop.', '["Time in the digital realm is not linear. It loops.", "**The Event Loop**: The heartbeat of the runtime. It checks the call stack and the callback queue.", "**Promises**: A vow to return a value in the future. It can be Resolved (fulfilled) or Rejected (broken).", "**Async/Await**: The modern incantation to write asynchronous code that looks synchronous. It halts the function''s execution until the Promise resolves."]', 650, NULL),
+('book_security', 'The Shield of Salting', 'Guardian Hash', 'Defend against dark arts with Hashing and Encryption.', '["To protect secrets, one must scramble them beyond recognition.", "**Hashing**: One-way transformation. You cannot turn a hash back into the original text. Great for passwords.", "**Salting**: Adding random data to a password before hashing it. This defeats Rainbow Table attacks.", "**Encryption**: Two-way transformation. Requires a key to lock and unlock."]', 700, NULL),
+('book_api', 'The Scrolls of Integration', 'The Connector', 'Speak the language of the web: REST and HTTP.', '["Applications must speak to one another. The lingua franca is HTTP.", "**GET**: Retrieve a resource. Like reading a scroll.", "**POST**: Create a resource. Like writing a new scroll.", "**PUT/PATCH**: Update a resource.", "**DELETE**: Remove a resource.", "**Status Codes**: 200 (OK), 404 (Not Found), 500 (Server Error)."]', 600, NULL)
+ON CONFLICT (id) DO NOTHING;
+
+-- Insert Questions (Quest & Book)
+INSERT INTO public.questions (id, quest_id, book_id, text, options, correct_index, explanation, difficulty, xp_reward) VALUES
+('q1_1', 'q1', NULL, 'Which principle suggests a class should have one reason to change?', '["Open/Closed", "Single Responsibility", "Liskov", "Dependency"]', 1, 'SRP.', 'Easy', 50),
+('q1_2', 'q1', NULL, 'Best way to handle flaky tests?', '["Delete", "Ignore", "Retry", "Fix root cause"]', 3, 'Fix it.', 'Easy', 50),
+('q1_3', 'q1', NULL, 'Pattern for decoupling creation?', '["Singleton", "Factory Method", "Observer", "Adapter"]', 1, 'Factory.', 'Medium', 75),
+('q2a_1', 'q2a', NULL, 'What is code smell?', '["Bad variable names", "Surface indication of deeper problem", "Compiler error", "Comments"]', 1, 'Hints at deeper issues.', 'Easy', 50),
+('q2a_2', 'q2a', NULL, 'Refactoring changes...', '["Behavior", "Internal Structure", "Both", "Neither"]', 1, 'Improves structure without changing behavior.', 'Medium', 60),
+('q2a_3', 'q2a', NULL, 'Which is a refactoring technique?', '["Extract Method", "Copy Paste", "Force Push", "Ignore Test"]', 0, 'Extract Method improves readability.', 'Medium', 60),
+('q2b_1', 'q2b', NULL, 'What is SQL Injection?', '["Database optimiztion", "Inserting malicious SQL statements", "A type of vaccination", "Faster queries"]', 1, 'Attacker interferes with database queries.', 'Hard', 80),
+('q2b_2', 'q2b', NULL, 'How to prevent XSS?', '["Sanitize Input", "Use more RAM", "Disable JavaScript", "Use HTTP"]', 0, 'Sanitizing input prevents script injection.', 'Medium', 70),
+('q2b_3', 'q2b', NULL, 'What is 2FA?', '["Two Factor Auth", "Too Fast Auth", "To Find All", "Two File Access"]', 0, 'Adds extra layer of security.', 'Easy', 50),
+('q2_1', 'q2', NULL, 'What keyword breaks a loop instantly?', '["stop", "end", "break", "return"]', 2, 'break exits the loop.', 'Easy', 50),
+('q2_2', 'q2', NULL, 'Which loop is guaranteed to run at least once?', '["for", "while", "do-while", "foreach"]', 2, 'do-while checks condition after execution.', 'Medium', 60),
+('q2_3', 'q2', NULL, 'Preventing infinite recursion requires?', '["Base case", "More memory", "Faster CPU", "Recursion limit"]', 0, 'A base case stops the recursion.', 'Medium', 60),
+('q3_1', 'q3', NULL, 'What is "null"?', '["Zero", "Empty String", "Absence of value", "Undefined variable"]', 2, 'Null represents a missing object reference.', 'Easy', 50),
+('q3_2', 'q3', NULL, 'Which operator safely accesses properties?', '["." , "?. (Optional Chaining)", "->", "::"]', 1, 'Optional chaining returns undefined if null.', 'Medium', 60),
+('q3_3', 'q3', NULL, 'In SQL, does NULL = NULL?', '["Yes", "No", "Depends on DB", "Only in Oracle"]', 1, 'NULL is not equal to anything, use IS NULL.', 'Hard', 80),
+('qr_1', 'q_recursion', NULL, 'What is a base case?', '["The bottom of the computer", "The condition that stops recursion", "A database", "The first function call"]', 1, 'Without a base case, recursion runs forever.', 'Easy', 50),
+('qr_2', 'q_recursion', NULL, 'What happens if you forget the base case?', '["Stack Overflow", "Heap Overflow", "Fast execution", "Nothing"]', 0, 'Infinite recursion fills the stack.', 'Medium', 60),
+('qr_3', 'q_recursion', NULL, 'Which data structure is used for recursion?', '["Queue", "Stack", "Tree", "Graph"]', 1, 'Function calls are pushed onto the stack.', 'Medium', 60),
+('q404_1', 'q_404', NULL, 'What does 404 mean?', '["Server Error", "Not Found", "Unauthorized", "Bad Request"]', 1, 'Resource not found.', 'Easy', 50),
+('q404_2', 'q_404', NULL, 'What does 403 mean?', '["Forbidden", "Not Found", "OK", "Created"]', 0, 'Access denied.', 'Medium', 60),
+('q404_3', 'q_404', NULL, 'Which is a client-side error range?', '["2xx", "3xx", "4xx", "5xx"]', 2, '4xx errors are client errors.', 'Medium', 60),
+('q4_1', 'q4', NULL, 'Why are global variables dangerous?', '["They use too much RAM", "Unpredictable state changes", "They are slow", "Compilers hate them"]', 1, 'Any function can change them, leading to bugs.', 'Medium', 70),
+('q4_2', 'q4', NULL, 'What is "DRY"?', '["Don''t Repeat Yourself", "Do Repeat Yourself", "Data Ready Yet", "Deployment Ready Year"]', 0, 'Avoid code duplication.', 'Easy', 50),
+('q4_3', 'q4', NULL, 'High Cohesion means?', '["Classes rely on each other", "Classes do one thing well", "Code is spread out", "Code is sticky"]', 1, 'Elements belong together.', 'Hard', 90),
+('q4_4', 'q4', NULL, 'Low Coupling means?', '["Modules are independent", "Modules are tightly bound", "Database is small", "Network is slow"]', 0, 'Changes in one module don''t break others.', 'Hard', 90),
+('q5_1', 'q5', NULL, 'What is a CDN?', '["Central Data Node", "Content Delivery Network", "Code Deployment Node", "Computer Domain Name"]', 1, 'Distributes content geographically.', 'Medium', 70),
+('q5_2', 'q5', NULL, 'Which HTTP code means "Too Many Requests"?', '["404", "500", "429", "418"]', 2, '429 is rate limiting.', 'Hard', 100),
+('q5_3', 'q5', NULL, 'What balances traffic across servers?', '["Firewall", "Load Balancer", "Switch", "Router"]', 1, 'Distributes network load.', 'Medium', 70),
+('bq1', NULL, 'book_git', 'What is a "commit"?', '["A promise to finish code", "A snapshot of changes", "A database connection", "A command to delete files"]', 1, 'A commit records changes to the repository.', 'Easy', 50),
+('bq2', NULL, 'book_git', 'Which command creates a new branch?', '["git branch <name>", "git new <name>", "git fork", "git split"]', 0, 'git branch creates a new branch pointer.', 'Medium', 50),
+('bq3', NULL, 'book_git', 'What is the "staging area"?', '["A place for theatrical plays", "A file in the .git folder", "An intermediate area where commits are prepared", "The remote server"]', 2, 'You add files to the staging area before committing them.', 'Medium', 50),
+('rq1', NULL, 'book_react', 'What is JSX?', '["JavaScript XML", "Java Syntax Extension", "JSON Xylophone", "Just Screen Xperience"]', 0, 'JSX is a syntax extension for JavaScript that looks like HTML.', 'Easy', 50),
+('rq2', NULL, 'book_react', 'Which hook handles side effects?', '["useState", "useSideEffect", "useEffect", "useReducer"]', 2, 'useEffect allows you to perform side effects in function components.', 'Medium', 50),
+('rq3', NULL, 'book_react', 'Props are...', '["Mutable", "Read-Only (Immutable)", "Global variables", "Hidden"]', 1, 'Props are read-only inputs passed from parent to child.', 'Medium', 50),
+('ci1', NULL, 'book_cicd', 'What is the main goal of CI?', '["To write code faster", "To detect integration errors as quickly as possible", "To delete old code", "To hire more developers"]', 1, 'CI aims to find and fix bugs quicker.', 'Medium', 75),
+('ci2', NULL, 'book_cicd', 'What usually triggers a CI pipeline?', '["A full moon", "A code commit/push", "A server restart", "Manual payment"]', 1, 'Pipelines are typically triggered by pushing code.', 'Easy', 50),
+('ci3', NULL, 'book_cicd', 'If a test fails in the pipeline, what happens?', '["It deploys anyway", "The pipeline stops and notifies", "The test deletes itself", "The server explodes"]', 1, 'The pipeline halts to prevent bad code from reaching production.', 'Medium', 75),
+('ds1', NULL, 'book_datastruct', 'Which structure is LIFO (Last In, First Out)?', '["Queue", "Stack", "Array", "Tree"]', 1, 'A Stack is LIFO (like a stack of plates).', 'Easy', 50),
+('ds2', NULL, 'book_datastruct', 'What is the time complexity to access an array element by index?', '["O(n)", "O(log n)", "O(1)", "O(n^2)"]', 2, 'Array access is constant time O(1).', 'Medium', 75),
+('ds3', NULL, 'book_datastruct', 'Which structure is best for a "First Come, First Served" system?', '["Stack", "Queue", "Graph", "Hash Map"]', 1, 'A Queue is FIFO.', 'Easy', 50),
+('pq1', NULL, 'book_python', 'How do you define a function in Python?', '["func", "def", "function", "void"]', 1, 'def keyword.', 'Easy', 50),
+('pq2', NULL, 'book_python', 'Which is immutable?', '["List", "Dict", "Set", "Tuple"]', 3, 'Tuples cannot change.', 'Medium', 50),
+('pq3', NULL, 'book_python', 'What does len() do?', '["Length", "Lend", "Load", "Loop"]', 0, 'Returns length.', 'Easy', 50),
+('aq1', NULL, 'book_algo', 'What is the complexity of Binary Search?', '["O(n)", "O(log n)", "O(1)", "O(n^2)"]', 1, 'Halves the search space each step.', 'Medium', 75),
+('aq2', NULL, 'book_algo', 'Which sorting algorithm is generally considered slowest?', '["QuickSort", "MergeSort", "BubbleSort", "HeapSort"]', 2, 'BubbleSort has O(n^2) average complexity.', 'Easy', 50),
+('aq3', NULL, 'book_algo', 'What is "Big O" notation used for?', '["Measuring code lines", "Measuring execution time vs input size", "Measuring memory bytes", "Measuring developer happiness"]', 1, 'It describes performance relative to input size.', 'Medium', 75),
+('as1', NULL, 'book_async', 'What state is a Promise in initially?', '["Resolved", "Rejected", "Pending", "Finished"]', 2, 'It starts as Pending.', 'Easy', 50),
+('as2', NULL, 'book_async', 'Which keyword pauses execution in an async function?', '["stop", "pause", "wait", "await"]', 3, 'await pauses until the Promise settles.', 'Medium', 60),
+('as3', NULL, 'book_async', 'Is JavaScript single-threaded?', '["Yes", "No", "Only on Tuesdays", "Depends on the browser"]', 0, 'JS has a single call stack.', 'Medium', 60),
+('sec1', NULL, 'book_security', 'What is the main difference between Hashing and Encryption?', '["Hashing is faster", "Encryption is reversible, Hashing is not", "Hashing is for text only", "Encryption is outdated"]', 1, 'Hashing is one-way; Encryption is two-way.', 'Medium', 70),
+('sec2', NULL, 'book_security', 'Why do we "salt" passwords?', '["To make them taste better", "To make them shorter", "To prevent Rainbow Table attacks", "To compress them"]', 2, 'Salts ensure identical passwords have different hashes.', 'Hard', 80),
+('sec3', NULL, 'book_security', 'Which protocol secures HTTP traffic?', '["FTP", "SSH", "HTTPS", "SMTP"]', 2, 'Hypertext Transfer Protocol Secure.', 'Easy', 50),
+('api1', NULL, 'book_api', 'Which method is used to request data?', '["POST", "GET", "DELETE", "CONNECT"]', 1, 'GET retrieves data.', 'Easy', 50),
+('api2', NULL, 'book_api', 'What does a 404 status code mean?', '["Success", "Server Error", "Not Found", "Forbidden"]', 2, 'The resource was not found.', 'Easy', 50),
+('api3', NULL, 'book_api', 'What format is most commonly used for REST APIs?', '["XML", "YAML", "JSON", "CSV"]', 2, 'JSON (JavaScript Object Notation).', 'Medium', 60)
+ON CONFLICT (id) DO NOTHING;

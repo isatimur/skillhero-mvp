@@ -1,0 +1,213 @@
+
+-- ==============================================================================
+-- SkillHero ULTIMATE Database Schema & Seed Data (v4.0 - ADMIN EDITION)
+-- ==============================================================================
+
+-- ------------------------------------------------------------------------------
+-- 1. CLEANUP & INIT
+-- ------------------------------------------------------------------------------
+-- DROP SCHEMA public CASCADE; CREATE SCHEMA public; -- (Use with caution!)
+
+CREATE EXTENSION IF NOT EXISTS vector; 
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+-- ------------------------------------------------------------------------------
+-- 2. ENUMS & TYPES
+-- ------------------------------------------------------------------------------
+DO $$ BEGIN CREATE TYPE traffic_type_enum AS ENUM ('READ_HEAVY', 'WRITE_HEAVY', 'REAL_TIME', 'BURSTY', 'DDOS'); EXCEPTION WHEN duplicate_object THEN null; END $$;
+DO $$ BEGIN CREATE TYPE rarity_enum AS ENUM ('common', 'rare', 'epic', 'legendary', 'artifact', 'ancient'); EXCEPTION WHEN duplicate_object THEN null; END $$;
+DO $$ BEGIN CREATE TYPE hero_class_enum AS ENUM ('WARRIOR', 'MAGE', 'ROGUE', 'PALADIN', 'BARD', 'NECROMANCER', 'MONK', 'ARCHITECT', 'MANAGER'); EXCEPTION WHEN duplicate_object THEN null; END $$;
+DO $$ BEGIN CREATE TYPE difficulty_enum AS ENUM ('Easy', 'Medium', 'Hard', 'Expert', 'Nightmare'); EXCEPTION WHEN duplicate_object THEN null; END $$;
+DO $$ BEGIN CREATE TYPE user_role_enum AS ENUM ('USER', 'ADMIN', 'SUPER_ADMIN'); EXCEPTION WHEN duplicate_object THEN null; END $$;
+
+-- ------------------------------------------------------------------------------
+-- 3. TABLES (DDL)
+-- ------------------------------------------------------------------------------
+
+-- 3.1 PROFILES (Extended)
+CREATE TABLE IF NOT EXISTS public.profiles (
+    id UUID PRIMARY KEY REFERENCES auth.users(id),
+    username TEXT UNIQUE NOT NULL,
+    title TEXT DEFAULT 'Novice Engineer',
+    level INTEGER DEFAULT 1,
+    xp INTEGER DEFAULT 0,
+    max_xp INTEGER DEFAULT 500,
+    reputation INTEGER DEFAULT 0,
+    hero_race TEXT DEFAULT 'HUMAN',
+    hero_class hero_class_enum DEFAULT 'WARRIOR',
+    gender TEXT DEFAULT 'MALE',
+    stats JSONB DEFAULT '{"str": 1, "int": 1, "agi": 1, "cha": 1}'::jsonb, 
+    appearance JSONB DEFAULT '{"headId": "head_novice", "bodyId": "body_novice", "weaponId": "weapon_scroll"}'::jsonb,
+    completed_quests TEXT[] DEFAULT '{}',
+    completed_books TEXT[] DEFAULT '{}',
+    unlocked_items TEXT[] DEFAULT '{}',
+    settings JSONB DEFAULT '{}'::jsonb,
+    role user_role_enum DEFAULT 'USER', -- NEW ROLE COLUMN
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can read own profile" ON public.profiles FOR SELECT USING (auth.uid() = id);
+CREATE POLICY "Users can update own profile" ON public.profiles FOR UPDATE USING (auth.uid() = id);
+CREATE POLICY "Admins can read all profiles" ON public.profiles FOR SELECT USING (
+  EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('ADMIN', 'SUPER_ADMIN'))
+);
+
+-- 3.2 COSMETICS (With detailed stats)
+CREATE TABLE IF NOT EXISTS public.cosmetic_items (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    type TEXT NOT NULL, 
+    level_required INTEGER NOT NULL DEFAULT 1,
+    icon_id TEXT NOT NULL,
+    style_class TEXT NOT NULL,
+    rarity rarity_enum DEFAULT 'common',
+    description TEXT,
+    attributes JSONB DEFAULT '{}'::jsonb,
+    img_url TEXT
+);
+ALTER TABLE public.cosmetic_items ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Public read cosmetics" ON public.cosmetic_items FOR SELECT USING (true);
+CREATE POLICY "Admins can edit cosmetics" ON public.cosmetic_items FOR ALL USING (
+  EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('ADMIN', 'SUPER_ADMIN'))
+);
+
+-- 3.3 QUESTS (With branching logic)
+CREATE TABLE IF NOT EXISTS public.quests (
+    id TEXT PRIMARY KEY,
+    title TEXT NOT NULL,
+    description TEXT NOT NULL,
+    level_required INTEGER NOT NULL,
+    narrative_intro TEXT[] NOT NULL,
+    narrative_outro TEXT NOT NULL,
+    reward_xp INTEGER NOT NULL,
+    reward_reputation INTEGER DEFAULT 0,
+    enemy_name TEXT NOT NULL,
+    enemy_image TEXT,
+    enemy_max_hp INTEGER,
+    enemy_attack_damage INTEGER,
+    next_quest_ids TEXT[],
+    is_pvp BOOLEAN DEFAULT FALSE,
+    special_mechanics JSONB DEFAULT '{}'::jsonb,
+    tags TEXT[] 
+);
+ALTER TABLE public.quests ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Public read quests" ON public.quests FOR SELECT USING (true);
+CREATE POLICY "Admins can edit quests" ON public.quests FOR ALL USING (
+  EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('ADMIN', 'SUPER_ADMIN'))
+);
+
+-- 3.6 LIBRARY BOOKS & QUESTIONS
+CREATE TABLE IF NOT EXISTS public.library_books (
+    id TEXT PRIMARY KEY,
+    title TEXT NOT NULL,
+    author TEXT NOT NULL,
+    description TEXT NOT NULL,
+    content JSONB NOT NULL,
+    reward_xp INTEGER NOT NULL,
+    reward_item_id TEXT REFERENCES public.cosmetic_items(id),
+    category TEXT
+);
+ALTER TABLE public.library_books ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Public read books" ON public.library_books FOR SELECT USING (true);
+CREATE POLICY "Admins can edit books" ON public.library_books FOR ALL USING (
+  EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('ADMIN', 'SUPER_ADMIN'))
+);
+
+CREATE TABLE IF NOT EXISTS public.questions (
+    id TEXT PRIMARY KEY,
+    quest_id TEXT REFERENCES public.quests(id),
+    book_id TEXT REFERENCES public.library_books(id),
+    text TEXT NOT NULL,
+    options JSONB NOT NULL,
+    correct_index INTEGER NOT NULL,
+    explanation TEXT NOT NULL,
+    difficulty difficulty_enum NOT NULL,
+    xp_reward INTEGER NOT NULL,
+    tags TEXT[] 
+);
+ALTER TABLE public.questions ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Public read questions" ON public.questions FOR SELECT USING (true);
+CREATE POLICY "Admins can edit questions" ON public.questions FOR ALL USING (
+  EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('ADMIN', 'SUPER_ADMIN'))
+);
+
+-- 3.7 NPCS
+CREATE TABLE IF NOT EXISTS public.world_npcs (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    sprite TEXT,
+    position JSONB NOT NULL, -- {x,y}
+    dialogue_tree JSONB NOT NULL,
+    starting_node_id TEXT NOT NULL,
+    dynamic_start JSONB,
+    reward_xp INTEGER
+);
+ALTER TABLE public.world_npcs ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Public read npcs" ON public.world_npcs FOR SELECT USING (true);
+CREATE POLICY "Admins can edit npcs" ON public.world_npcs FOR ALL USING (
+  EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('ADMIN', 'SUPER_ADMIN'))
+);
+
+-- 3.8 SPELLS
+CREATE TABLE IF NOT EXISTS public.spells (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    description TEXT NOT NULL,
+    icon_id TEXT NOT NULL,
+    school TEXT NOT NULL,
+    color TEXT NOT NULL
+);
+ALTER TABLE public.spells ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Public read spells" ON public.spells FOR SELECT USING (true);
+CREATE POLICY "Admins can edit spells" ON public.spells FOR ALL USING (
+  EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('ADMIN', 'SUPER_ADMIN'))
+);
+
+-- 3.9 SKILL NODES
+CREATE TABLE IF NOT EXISTS public.skill_nodes (
+    id TEXT PRIMARY KEY,
+    book_id TEXT REFERENCES public.library_books(id),
+    x INTEGER NOT NULL,
+    y INTEGER NOT NULL,
+    parents TEXT[],
+    label TEXT
+);
+ALTER TABLE public.skill_nodes ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Public read skill_nodes" ON public.skill_nodes FOR SELECT USING (true);
+CREATE POLICY "Admins can edit skill_nodes" ON public.skill_nodes FOR ALL USING (
+  EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('ADMIN', 'SUPER_ADMIN'))
+);
+
+-- ------------------------------------------------------------------------------
+-- 4. SERVER-SIDE FUNCTIONS (RPC)
+-- ------------------------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION handle_level_up()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF NEW.xp >= OLD.max_xp THEN
+    NEW.level := OLD.level + 1;
+    NEW.xp := NEW.xp - OLD.max_xp;
+    NEW.max_xp := FLOOR(OLD.max_xp * 1.5);
+    NEW.stats := jsonb_build_object(
+      'str', (OLD.stats->>'str')::int + 1,
+      'int', (OLD.stats->>'int')::int + 1,
+      'agi', (OLD.stats->>'agi')::int + 1,
+      'cha', (OLD.stats->>'cha')::int + 1
+    );
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS check_level_up ON public.profiles;
+CREATE TRIGGER check_level_up
+BEFORE UPDATE ON public.profiles
+FOR EACH ROW
+WHEN (NEW.xp >= OLD.max_xp)
+EXECUTE FUNCTION handle_level_up();
+
+-- ------------------------------------------------------------------------------
+-- 5. INITIAL ADMIN SETUP (Manually update existing user to ADMIN via SQL if needed)
+-- ------------------------------------------------------------------------------
+-- UPDATE public.profiles SET role = 'ADMIN' WHERE username = 'YourUsername';
