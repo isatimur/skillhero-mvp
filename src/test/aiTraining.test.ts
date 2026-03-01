@@ -13,7 +13,7 @@ vi.mock('@/lib/supabase', () => ({
 import { generateAIQuiz } from '@/lib/aiTraining';
 import { supabase } from '@/lib/supabase';
 
-const mockInvoke = supabase.functions.invoke as ReturnType<typeof vi.fn>;
+const mockInvoke = vi.mocked(supabase.functions.invoke);
 
 const fakeQuestion = {
   id: 'ai_test_1',
