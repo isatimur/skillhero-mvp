@@ -5,6 +5,30 @@ import { corsHeaders } from '../_shared/cors.ts';
 const GEMINI_URL =
   'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
 
+// Allowed topics — must match SETopic in types.ts
+const ALLOWED_TOPICS = new Set([
+  'Algorithms',
+  'Data Structures',
+  'OOP & Design Patterns',
+  'SQL & Databases',
+  'Git & Version Control',
+  'System Design',
+  'Networking & APIs',
+  'Security',
+  'Testing & CI/CD',
+  'JavaScript/TypeScript',
+  'React & Frontend',
+  'Backend & Servers',
+  'Cloud & DevOps',
+  'Concurrency',
+  'General CS',
+  'Software Architecture',
+  'AI & Machine Learning',
+  'Mobile Development',
+  'Operating Systems',
+  'TypeScript Advanced',
+]);
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 const parseJsonArray = (raw: string): unknown[] => {
@@ -19,6 +43,7 @@ const parseJsonArray = (raw: string): unknown[] => {
   try {
     return JSON.parse(cleaned.slice(start, end + 1));
   } catch {
+    console.warn('parseJsonArray: failed to parse Gemini response', raw.slice(0, 200));
     return [];
   }
 };
@@ -30,13 +55,13 @@ const normalizeQuestion = (item: unknown, topic: string, idx: number) => {
     !q.text || !Array.isArray(q.options) || typeof q.correctIndex !== 'number' || !q.explanation
   ) return null;
   if (q.options.length !== 4) return null;
-  if (q.correctIndex < 0 || q.correctIndex > 3) return null;
+  if (!Number.isInteger(q.correctIndex) || q.correctIndex < 0 || q.correctIndex > 3) return null;
   const difficulty =
     q.difficulty === 'Easy' || q.difficulty === 'Medium' || q.difficulty === 'Hard'
       ? q.difficulty
       : 'Medium';
   return {
-    id: `ai_${topic.replace(/\W+/g, '_').toLowerCase()}_${Date.now()}_${idx}`,
+    id: `ai_${topic.replace(/\W+/g, '_').toLowerCase()}_${crypto.randomUUID()}_${idx}`,
     text: String(q.text).trim(),
     options: (q.options as unknown[]).map((o) => String(o).trim()),
     correctIndex: q.correctIndex,
@@ -82,8 +107,11 @@ Deno.serve(async (req) => {
   } catch {
     return json({ error: 'Invalid JSON body' }, 400);
   }
-  if (!topic || typeof topic !== 'string') {
+  if (!topic || typeof topic !== 'string' || topic.length > 100) {
     return json({ error: 'Invalid request: topic is required' }, 400);
+  }
+  if (!ALLOWED_TOPICS.has(topic)) {
+    return json({ error: 'Invalid request: unknown topic' }, 400);
   }
   count = Math.min(Math.max(1, count), 10); // clamp 1–10
 
@@ -102,23 +130,35 @@ Deno.serve(async (req) => {
     '- Explanation should mention why the correct option is best.',
   ].join('\n');
 
-  const geminiRes = await fetch(`${GEMINI_URL}?key=${apiKey}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      contents: [{ role: 'user', parts: [{ text: prompt }] }],
-      generationConfig: { temperature: 0.6, topK: 40, topP: 0.95, maxOutputTokens: 2048 },
-    }),
-  });
+  let geminiRes: Response;
+  try {
+    geminiRes = await fetch(GEMINI_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
+      body: JSON.stringify({
+        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+        generationConfig: { temperature: 0.6, topK: 40, topP: 0.95, maxOutputTokens: 4096 },
+      }),
+    });
+  } catch (err) {
+    console.error('Gemini fetch error:', err);
+    return json({ error: 'AI service unreachable' }, 502);
+  }
 
   if (!geminiRes.ok) {
     return json({ error: `Gemini request failed (${geminiRes.status})` }, 502);
   }
 
-  const data = await geminiRes.json();
+  let data: unknown;
+  try {
+    data = await geminiRes.json();
+  } catch {
+    return json({ error: 'AI returned invalid response' }, 502);
+  }
+
+  const geminiData = data as { candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }> };
   const text: string =
-    data.candidates?.[0]?.content?.parts?.map((p: { text?: string }) => p.text ?? '').join('\n') ??
-    '';
+    geminiData.candidates?.[0]?.content?.parts?.map((p) => p.text ?? '').join('\n') ?? '';
 
   const questions = parseJsonArray(text)
     .map((item, idx) => normalizeQuestion(item, topic, idx))
