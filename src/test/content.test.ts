@@ -46,14 +46,26 @@ describe('LIBRARY_BOOKS content', () => {
 });
 
 describe('QUESTS content', () => {
-  it('has at least 27 quests total (existing + 7 new)', () => {
-    expect(QUESTS.length).toBeGreaterThanOrEqual(27);
+  it('has at least 35 quests total (existing + 15 new scenario quests)', () => {
+    expect(QUESTS.length).toBeGreaterThanOrEqual(35);
   });
 
   const NEW_QUEST_IDS = ['q_ddd_golem', 'q_clean_arch_lich', 'q_gradient_wraith', 'q_transformer_dragon', 'q_react_native_chimera', 'q_deadlock_daemon', 'q_generic_hydra'];
   it('all 7 new quests exist', () => {
     const ids = QUESTS.map(q => q.id);
     for (const id of NEW_QUEST_IDS) {
+      expect(ids, `${id} missing`).toContain(id);
+    }
+  });
+
+  const SCENARIO_QUEST_IDS = [
+    'q_concurrency_phantom', 'q_git_detective', 'q_react_specter',
+    'q_testing_ghost', 'q_cloud_wyvern', 'q_backend_ogre',
+    'q_general_imp', 'q_oop_interface',
+  ];
+  it('all 8 new scenario quests exist', () => {
+    const ids = QUESTS.map(q => q.id);
+    for (const id of SCENARIO_QUEST_IDS) {
       expect(ids, `${id} missing`).toContain(id);
     }
   });
