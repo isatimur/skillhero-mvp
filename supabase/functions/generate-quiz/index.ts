@@ -121,13 +121,15 @@ Deno.serve(async (req) => {
 
   const prompt = [
     `Generate ${count} multiple-choice software engineering training questions for topic: "${topic}".`,
-    'Return ONLY JSON array, no markdown.',
+    'Return ONLY a JSON array, no markdown, no explanation outside the array.',
     'Each item must match this schema exactly:',
     '{ "text": string, "options": [string,string,string,string], "correctIndex": 0|1|2|3, "explanation": string, "difficulty": "Easy"|"Medium"|"Hard" }',
     'Rules:',
-    '- Practical, interview-style scenarios, not trivia.',
+    '- Each question MUST describe a realistic scenario: a bug to diagnose, a system under load, a code snippet with a problem, or an architectural tradeoff — never a bare definition or trivia.',
+    '- Wrong options must be plausible mistakes a real developer would make, not obviously incorrect.',
+    '- Easy = junior-level mistake (missing null check, wrong command). Medium = mid-level tradeoff (caching strategy, query optimisation). Hard = senior architecture decision (consistency vs availability, scaling approach).',
     '- Exactly one correct option.',
-    '- Explanation should mention why the correct option is best.',
+    '- Explanation must state WHY the correct answer is best AND why the most tempting wrong answer fails.',
   ].join('\n');
 
   let geminiRes: Response;
