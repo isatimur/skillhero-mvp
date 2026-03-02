@@ -68,7 +68,7 @@ export const LoginScreen: React.FC<{ session: any; onProfileCreated: (user: User
                 '';
             if (name) setUsername(name.split(' ')[0].slice(0, 15));
         }
-    }, [session]);
+    }, [session, username]);
 
     const handleCreateProfile = async () => {
         if (!session?.user || !currentClass) return;
