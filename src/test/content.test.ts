@@ -59,7 +59,7 @@ describe('QUESTS content', () => {
   });
 
   const SCENARIO_QUEST_IDS = [
-    'q_concurrency_phantom', 'q_git_detective', 'q_react_specter',
+    'q_concurrency_phantom', 'q_git_detective', 'q_react_hooks_specter',
     'q_testing_ghost', 'q_cloud_wyvern', 'q_backend_ogre',
     'q_general_imp', 'q_oop_interface',
   ];

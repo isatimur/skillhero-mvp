@@ -200,7 +200,7 @@ export const QUESTS: Quest[] = [
 
   // ========== TIER 3: ADVANCED (Level 5-8) ==========
   {
-    id: 'q_react_state_specter',
+    id: 'q_react_specter',
     title: 'The State Mutation Specter',
     description: 'It mutates state directly and causes infinite re-renders! Stop the ghost before React implodes!',
     levelRequired: 5,
@@ -678,7 +678,7 @@ export const QUESTS: Quest[] = [
   },
 
   {
-    id: 'q_react_specter',
+    id: 'q_react_hooks_specter',
     title: 'The Stale Closure Specter',
     description: 'Components re-render when they should not. State is stale. The hooks are haunted.',
     levelRequired: 4,
